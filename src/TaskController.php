@@ -17,6 +17,15 @@ class TaskController
             } elseif ($method == "POST") {
                 
                 $data = (array) json_decode(file_get_contents("php://input"), true);
+
+                $errors = $this->getValidationErrors($data);
+
+                if ( ! empty($errors)) {
+
+                    $this->respondUnprocessableEntity($errors);
+                    return;
+
+                }
                 
                 $id = $this->gateway->create($data);
 
@@ -43,7 +52,19 @@ class TaskController
                     break;
                 
                 case "PATCH":
-                    echo "update $id";
+
+                    $data = (array) json_decode(file_get_contents("php://input"), true);
+
+                    $errors = $this->getValidationErrors($data, false);
+
+                    if ( ! empty($errors)) {
+
+                        $this->respondUnprocessableEntity($errors);
+                        return;
+
+                    }
+
+                    $this->gateway->update($id, $data);
                     break;
                     
                 case "DELETE":
@@ -54,6 +75,12 @@ class TaskController
                     $this->respondMethodNotAllowed("GET, PATCH, DELETE");
             }
         }
+    }
+
+    private function respondUnprocessableEntity(array $errors): void
+    {
+        http_response_code(422);
+        echo json_encode(["errors" => $errors]);
     }
     
     private function respondMethodNotAllowed(string $allowed_methods): void
@@ -72,6 +99,29 @@ class TaskController
     {
         http_response_code(201);
         echo json_encode(["message" => "Task created", "id" => $id]);
+    }
+
+    private function getValidationErrors(array $data, bool $is_new = true): array
+    {
+        $errors = [];
+
+        if ($is_new && empty($data["name"])) {
+
+            $errors[] = "name is required";
+
+        }
+
+        if ( ! empty($data["priority"])) {
+
+            if (filter_var($data["priority"], FILTER_VALIDATE_INT) === false) {
+
+                $errors[] = "priority must be and integer";
+
+            }
+
+        }
+
+        return $errors;
     }
 }
 
