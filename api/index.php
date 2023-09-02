@@ -33,12 +33,17 @@ if (empty($_SERVER["HTTP_X_API_KEY"])) {
 
 $api_key = $_SERVER["HTTP_X_API_KEY"];
 
-echo $api_key;
-exit;
+$database = new Database($_ENV["DB_HOST"], $_ENV["DB_NAME"], $_ENV["DB_USER"], $_ENV["DB_PASS"]);
+
+$user_gateway = new UserGateway($database);
+
+if ($user_gateway->getByAPIKey($api_key) === false) {
+    http_response_code(401);
+    echo json_encode(["message" => "invalid API key"]);
+    exit;
+}
 
 header("Content-type: application/json; charset=UTF-8");
-
-$database = new Database($_ENV["DB_HOST"], $_ENV["DB_NAME"], $_ENV["DB_USER"], $_ENV["DB_PASS"]);
 
 $task_gateway = new TaskGateway($database);
 
