@@ -28,9 +28,6 @@ if ( ! $auth->authenticateAccessToken()) {
     exit;
 }
 
-echo "valid authentication";
-exit;
-
 $user_id = $auth->getUserID();
 
 $task_gateway = new TaskGateway($database);
